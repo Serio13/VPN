@@ -1,8 +1,12 @@
 'use strict';
 const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
+const { pathToFileURL } = require('url');
 const vpngate = require('./vpngate');
+const { isTrustedSender } = require('./ipc-guard');
 const { VpnManager, findOpenVpn, installOpenVpn } = require('./openvpn');
+
+const APP_PAGE = pathToFileURL(path.join(__dirname, '..', 'renderer', 'index.html')).href;
 
 let win = null;
 let servers = [];
@@ -31,21 +35,29 @@ function createWindow() {
   win.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
 }
 
+/** Registra un handler IPC que solo atiende a nuestra propia página (arrancan OpenVPN como administrador). */
+function handle(channel, fn) {
+  ipcMain.handle(channel, (event, ...args) => {
+    if (!isTrustedSender(event, APP_PAGE)) throw new Error(`IPC rechazado (${channel}): origen no confiable`);
+    return fn(event, ...args);
+  });
+}
+
 function setupIpc() {
   const cacheDir = path.join(app.getPath('userData'), 'cache');
   manager = new VpnManager({ runDir: path.join(app.getPath('userData'), 'run'), ipLookup: publicIp });
   manager.on('state', (s) => send('vpn:state', s));
 
-  ipcMain.handle('servers:load', async (_e, refresh) => {
+  handle('servers:load', async (_e, refresh) => {
     const r = await vpngate.loadServers({ cacheDir, refresh: !!refresh });
     servers = r.servers;
     return { countries: vpngate.summarize(servers), total: servers.length, fetchedAt: r.fetchedAt, stale: r.stale, warning: r.warning };
   });
 
-  ipcMain.handle('servers:country', (_e, cc) =>
+  handle('servers:country', (_e, cc) =>
     servers.filter((s) => s.cc === String(cc).toUpperCase()).sort((a, b) => b.score - a.score).map(vpngate.publicView));
 
-  ipcMain.handle('vpn:connect', async (_e, { cc, ip } = {}) => {
+  handle('vpn:connect', async (_e, { cc, ip } = {}) => {
     let pool = servers;
     if (ip) pool = servers.filter((s) => s.ip === ip);
     else if (cc) pool = servers.filter((s) => s.cc === String(cc).toUpperCase());
@@ -54,11 +66,11 @@ function setupIpc() {
     return { started: true, candidates: candidates.length };
   });
 
-  ipcMain.handle('vpn:disconnect', () => manager.disconnect());
-  ipcMain.handle('vpn:state', () => manager.state);
-  ipcMain.handle('vpn:log', () => manager.log.slice(-80));
-  ipcMain.handle('sys:openvpn', () => ({ installed: !!findOpenVpn(), platform: process.platform }));
-  ipcMain.handle('sys:install-openvpn', () => installOpenVpn());
+  handle('vpn:disconnect', () => manager.disconnect());
+  handle('vpn:state', () => manager.state);
+  handle('vpn:log', () => manager.log.slice(-80));
+  handle('sys:openvpn', () => ({ installed: !!findOpenVpn(), platform: process.platform }));
+  handle('sys:install-openvpn', () => installOpenVpn());
 }
 
 const lock = app.requestSingleInstanceLock();

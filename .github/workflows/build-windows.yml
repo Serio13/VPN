@@ -7,6 +7,10 @@ on:
     paths: ['app/**', '.github/workflows/build-windows.yml']
   workflow_dispatch:
 
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
