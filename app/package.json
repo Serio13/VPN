@@ -1,0 +1,47 @@
+{
+  "name": "freevpn-desktop",
+  "version": "1.0.0",
+  "description": "VPN gratuita con mapa mundial para Windows",
+  "main": "src/main.js",
+  "author": "Serio13",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test \"test/*.test.js\"",
+    "prepare-assets": "node scripts/prepare-assets.js",
+    "dist": "npm run prepare-assets && electron-builder --win nsis portable --publish never"
+  },
+  "build": {
+    "appId": "com.serio13.freevpn",
+    "productName": "FreeVPN",
+    "files": [
+      "src/**",
+      "renderer/**",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "requestedExecutionLevel": "requireAdministrator",
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": true
+    }
+  },
+  "devDependencies": {
+    "d3": "^7.9.0",
+    "d3-geo": "^3.1.1",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "flag-icons": "^7.5.0",
+    "topojson-client": "^3.1.0",
+    "world-atlas": "^2.0.2",
+    "world-countries": "^5.1.0"
+  }
+}

@@ -28,7 +28,7 @@ Lo que sí es replicable es la arquitectura, con infraestructura propia o abiert
    NO para privacidad fuerte.
 2. **WireGuard propio** en VPS gratuitos/baratos de varias regiones (Oracle Cloud Always Free,
    Google Cloud e2-micro en EE. UU., AWS/Azure con créditos). Máxima privacidad y velocidad;
-   "todo el mundo" = tantas regiones como cuentas free-tier tengas. `deploy/wireguard-server.sh`.
+   "todo el mundo" = tantas regiones como cuentas free-tier tengas. `cli/deploy/wireguard-server.sh`.
 3. **Cloudflare WARP** (cliente oficial gratuito): cifrado a Cloudflare, sin elegir país.
 
 ## 4. Datos reales del formato VPN Gate

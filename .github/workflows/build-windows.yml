@@ -1,0 +1,45 @@
+name: Build FreeVPN (Windows)
+
+on:
+  push:
+    branches: [main, 'claude/**']
+    tags: ['v*']
+    paths: ['app/**', '.github/workflows/build-windows.yml']
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: app } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: app/package-lock.json }
+      - run: npm ci
+      - run: npm test
+
+  build:
+    needs: test
+    runs-on: windows-latest
+    permissions: { contents: write }
+    defaults: { run: { working-directory: app } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: app/package-lock.json }
+      - run: npm ci
+      - run: npm run dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FreeVPN-windows
+          path: |
+            app/dist/*.exe
+          if-no-files-found: error
+      - name: Publicar en Releases
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'latest-build' }}
+          name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'FreeVPN (última compilación)' }}
+          prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          files: app/dist/*.exe

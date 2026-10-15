@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FreeVPN</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="logo" aria-hidden="true"></span>FreeVPN</div>
+  <div id="status" class="status idle" role="status" aria-live="polite">
+    <span class="dot"></span>
+    <div class="status-text"><strong id="status-title">Desconectado</strong><span id="status-sub">Tu conexión no está protegida</span></div>
+    <span id="status-timer" class="timer" hidden></span>
+    <button id="btn-disconnect" class="btn danger" hidden>Desconectar</button>
+  </div>
+  <div class="top-actions">
+    <button id="btn-refresh" class="icon-btn" title="Actualizar lista de servidores" aria-label="Actualizar lista de servidores">⟳</button>
+    <button id="btn-log" class="icon-btn" title="Registro de conexión" aria-label="Registro de conexión">☰</button>
+  </div>
+</header>
+
+<div id="banner" class="banner" hidden></div>
+
+<main class="layout">
+  <aside class="sidebar">
+    <button id="btn-quick" class="btn primary wide">⚡ Conexión rápida</button>
+    <input id="search" type="search" placeholder="Buscar país…" autocomplete="off" aria-label="Buscar país">
+    <div id="summary" class="summary"></div>
+    <ul id="country-list" class="country-list"></ul>
+  </aside>
+
+  <section class="map-wrap">
+    <svg id="map" role="img" aria-label="Mapa mundial de servidores"></svg>
+    <div id="tooltip" class="tooltip" hidden></div>
+    <div class="map-hint">Rueda para acercar · arrastra para mover · pulsa un país</div>
+  </section>
+
+  <aside id="detail" class="detail" hidden>
+    <div class="detail-head">
+      <img id="detail-flag" alt="" width="36" height="27">
+      <div><h2 id="detail-name"></h2><span id="detail-sub"></span></div>
+      <button id="detail-close" class="icon-btn" aria-label="Cerrar">✕</button>
+    </div>
+    <button id="btn-connect-best" class="btn primary wide">Conectar al mejor servidor</button>
+    <ul id="server-list" class="server-list"></ul>
+  </aside>
+</main>
+
+<footer class="foot">Servidores voluntarios de <b>VPN Gate</b> (Univ. de Tsukuba): útiles para cambiar tu ubicación; algunos guardan registros. No los uses para tráfico sensible.
+</footer>
+
+<div id="log-modal" class="modal" hidden>
+  <div class="modal-box"><div class="modal-head"><strong>Registro de conexión</strong><button id="log-close" class="icon-btn" aria-label="Cerrar">✕</button></div><pre id="log-body"></pre></div>
+</div>
+
+<script src="vendor/d3.min.js"></script>
+<script src="vendor/topojson-client.min.js"></script>
+<script src="data/world.js"></script>
+<script src="data/countries.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
