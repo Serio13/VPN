@@ -41,9 +41,11 @@ function freePort() {
   });
 }
 
-function buildArgs({ ovpn, mgmtPort, pwFile }) {
+function buildArgs({ ovpn, mgmtPort, pwFile, authFile }) {
   return [
     '--config', ovpn,
+    '--script-security', '0', // nunca ejecutar programas externos aunque la config lo pida
+    ...(authFile ? ['--auth-user-pass', authFile] : []),
     '--auth-nocache',
     '--data-ciphers', 'AES-256-GCM:AES-128-GCM:AES-128-CBC',
     '--connect-timeout', '10',
@@ -106,10 +108,15 @@ class VpnManager extends EventEmitter {
     this.mgmtPw = crypto.randomBytes(16).toString('hex');
     fs.writeFileSync(ovpn, server.config, { mode: 0o600 });
     fs.writeFileSync(pwFile, this.mgmtPw + '\n', { mode: 0o600 });
+    let authFile;
+    if (server.needsAuth) { // credenciales públicas de VPN Gate
+      authFile = path.join(this.runDir, 'auth.txt');
+      fs.writeFileSync(authFile, 'vpn\nvpn\n', { mode: 0o600 });
+    }
     const mgmtPort = await freePort();
     this.mgmtPort = mgmtPort;
     this.log = [];
-    const child = spawn(bin, buildArgs({ ovpn, mgmtPort, pwFile }), { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(bin, buildArgs({ ovpn, mgmtPort, pwFile, authFile }), { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
     this.child = child;
     return new Promise((resolve) => {
       let settled = false;
@@ -163,7 +170,7 @@ class VpnManager extends EventEmitter {
     const timeout = new Promise((r) => setTimeout(() => r('timeout'), 5000));
     if ((await Promise.race([exited, timeout])) === 'timeout') this._kill(child);
     this.child = null;
-    for (const f of ['current.ovpn', 'mgmt.pw']) fs.rmSync(path.join(this.runDir, f), { force: true });
+    for (const f of ['current.ovpn', 'mgmt.pw', 'auth.txt']) fs.rmSync(path.join(this.runDir, f), { force: true });
     this._set({ state: 'idle' });
   }
 

@@ -77,4 +77,9 @@ test('findOpenVpn y buildArgs', () => {
   assert.strictEqual(findOpenVpn({ FREEVPN_OPENVPN: '/x' }, () => false), null);
   const a = buildArgs({ ovpn: 'c.ovpn', mgmtPort: 1234, pwFile: 'pw' });
   assert.deepStrictEqual(a.slice(-4), ['--management', '127.0.0.1', '1234', 'pw']);
+  const i = a.indexOf('--script-security');
+  assert.strictEqual(a[i + 1], '0');
+  assert.ok(!a.includes('--auth-user-pass'));
+  const withAuth = buildArgs({ ovpn: 'c', mgmtPort: 1, pwFile: 'p', authFile: 'a.txt' });
+  assert.strictEqual(withAuth[withAuth.indexOf('--auth-user-pass') + 1], 'a.txt');
 });

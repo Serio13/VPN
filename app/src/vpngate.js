@@ -4,6 +4,7 @@
 const fs = require('fs');
 const net = require('net');
 const path = require('path');
+const { sanitize } = require('./ovpn-sanitize');
 
 const API_URLS = ['https://www.vpngate.net/api/iphone/', 'http://www.vpngate.net/api/iphone/'];
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -48,12 +49,15 @@ function parse(text) {
   const need = ['HostName', 'IP', 'Score', 'Ping', 'Speed', 'CountryShort', 'OpenVPN_ConfigData_Base64'];
   if (need.some((n) => !(n in col))) return [];
   const servers = [];
+  let rejected = 0;
   for (const line of lines.slice(1)) {
     const f = splitCsvLine(line);
     const b64 = f[col.OpenVPN_ConfigData_Base64];
     const score = Number(f[col.Score]);
     if (!b64 || !Number.isFinite(score) || !f[col.CountryShort]) continue;
-    const config = Buffer.from(b64, 'base64').toString('utf8');
+    const safe = sanitize(Buffer.from(b64, 'base64').toString('utf8'));
+    if (!safe.ok) { rejected++; continue; } // config con directivas de ejecución: servidor descartado
+    const config = safe.config;
     const { port, proto } = remoteOf(config);
     servers.push({
       host: f[col.HostName],
@@ -70,8 +74,10 @@ function parse(text) {
       port,
       proto,
       config,
+      needsAuth: safe.needsAuth,
     });
   }
+  servers.rejected = rejected;
   return servers;
 }
 
